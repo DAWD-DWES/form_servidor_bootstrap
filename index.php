@@ -7,7 +7,7 @@ define("RETRO_PASS_FORMATO", "El password debe tener una minúscula, mayúscula,
 if (filter_has_var(INPUT_POST, 'enviar')) {
     $usuario = filter_input(INPUT_POST, 'usuario', FILTER_UNSAFE_RAW);
     $errorUsuarioFormato = (filter_var($usuario, FILTER_VALIDATE_REGEXP, ["options" => [
-                    "regexp" => "/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\-]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\-]+){0,5}$/"]]) === false);
+                    "regexp" => "/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\-]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\- ]+){0,5}$/"]]) === false);
     $password1 = filter_input(INPUT_POST, 'password1', FILTER_UNSAFE_RAW);
     $password2 = filter_input(INPUT_POST, 'password2', FILTER_UNSAFE_RAW);
     $errorPasswordNoRepetido = ($password1 !== $password2);
@@ -27,14 +27,14 @@ if (filter_has_var(INPUT_POST, 'enviar')) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <!-- Bootstrap CDN -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
         <!-- Bootstrap Font Icon CSS -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
         <title>Registro</title>
     </head>
     <body class="bg-info">
         <div class="container mt-5">
-            <?php if ($error ?? false): ?> <!-- (isset($error) && !$error) -->
+            <?php if (!($error ?? true)): ?> <!-- (isset($error) && !$error) -->
                 <div class="alert alert-success" id="mensaje" role="alert">
                     Registro realizado con éxito
                 </div>
@@ -56,19 +56,19 @@ if (filter_has_var(INPUT_POST, 'enviar')) {
                             </div>
                             <div class="input-group my-2">
                                 <span class="input-group-text"><i class="bi bi-key"></i></span>
-                                <input type="password" class="form-control" placeholder="contraseña" id="password1" name="password1" 
+                                <input type="password" class="form-control <?= isset($errorPasswordFormato) ? ($errorPasswordFormato ? "is-invalid" : "is-valid") : "" ?>" 
+                                       placeholder="contraseña" id="password1" name="password1" 
                                        value="<?= $password1 ?? '' ?>">
+                                <div class="invalid-feedback">
+                                    <br><?= RETRO_PASS_FORMATO ?>
+                                </div>
                             </div>
                             <div class="input-group my-2">
                                 <span class="input-group-text"><i class="bi bi-key"></i></span>
-                                <input type="password" class="form-control <?= isset($errorPassword) ? ($errorPassword ? "is-invalid" : "is-valid") : "" ?>"  
+                                <input type="password" class="form-control <?= isset($errorPasswordNoRepetido) ? ($errorPasswordNoRepetido ? "is-invalid" : "is-valid") : "" ?>"  
                                        placeholder="Repita la contraseña" id="password2" name="password2" value="<?= $password2 ?? '' ?>">
                                 <div class="invalid-feedback">
-                                    <?php if (isset($errorPasswordNoRepetido) && $errorPasswordNoRepetido): ?> 
-                                        <?= RETRO_PASS_REPETIDO ?>
-                                    <?php elseif (isset($errorPassword) && $errorPassword): ?> 
-                                        <br><?= RETRO_PASS_FORMATO ?>
-                                    <?php endif ?>
+                                    <?= RETRO_PASS_REPETIDO ?>
                                 </div>
                             </div>
                             <div class="input-group my-2">
