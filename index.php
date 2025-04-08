@@ -1,21 +1,21 @@
 <?php
-define("RETRO_NOMBRE_FORMATO", "El nombre de estar formado por al menos 3 caracteres de palabra");
-define("RETRO_EMAIL_FORMATO", "El correo debe tener un formato correcto");
-define("RETRO_PASS_REPETIDO", "Los passwords introducidos deben de ser iguales");
-define("RETRO_PASS_FORMATO", "El password debe tener una minúscula, mayúscula, digito y caracter espercial");
+define("RETRO_NOMBRE_FORMATO", "El nombre debe estar formado por al menos 3 caracteres de palabra.");
+define("RETRO_EMAIL_FORMATO", "El correo debe tener un formato correcto.");
+define("RETRO_PASS_REPETIDO", "Las contraseñas introducidas deben ser iguales.");
+define("RETRO_PASS_FORMATO", "El password debe tener una minúscula, mayúscula, dígito y carácter especial.");
 
-if (filter_has_var(INPUT_POST, 'enviar')) {
+$enviado = filter_has_var(INPUT_POST, 'enviar');
+if ($enviado) {
     $usuario = filter_input(INPUT_POST, 'usuario', FILTER_UNSAFE_RAW);
-    $errorUsuarioFormato = (filter_var($usuario, FILTER_VALIDATE_REGEXP, ["options" => [
-                    "regexp" => "/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\-]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\- ]+){0,5}$/"]]) === false);
     $password1 = filter_input(INPUT_POST, 'password1', FILTER_UNSAFE_RAW);
     $password2 = filter_input(INPUT_POST, 'password2', FILTER_UNSAFE_RAW);
-    $errorPasswordNoRepetido = ($password1 !== $password2);
-    $errorPasswordFormato = (filter_var($password1, FILTER_VALIDATE_REGEXP, ["options" => [
-                    "regexp" => "/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}/"]]) === false);
     $email = filter_input(INPUT_POST, 'email', FILTER_UNSAFE_RAW);
-    $errorEmailFormato = (filter_var($email, FILTER_VALIDATE_REGEXP, ["options" => [
-                    "regexp" => "/^[a-z0-9]+([_\\.-][a-z0-9]+)*@([a-z0-9]+([\.-][a-z0-9]+)*)+\\.[a-z]{2,}$/i"]]) === false);
+
+    $errorUsuarioFormato = !preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\-]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\- ]+){0,5}$/", $usuario ?? '') || mb_strlen(trim($usuario ?? '')) < 3;
+    $errorPasswordFormato = !preg_match("/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}/", $password1 ?? '');
+    $errorPasswordNoRepetido = $password1 !== $password2 || $errorPasswordFormato;
+    $errorEmailFormato = !preg_match("/^[a-z0-9]+([_\\.-][a-z0-9]+)*@([a-z0-9]+([\.-][a-z0-9]+)*)+\\.[a-z]{2,}$/i", $email ?? '');
+
     $errorPassword = $errorPasswordFormato || $errorPasswordNoRepetido;
     $error = $errorUsuarioFormato || $errorEmailFormato || $errorPassword;
 }
@@ -45,44 +45,62 @@ if (filter_has_var(INPUT_POST, 'enviar')) {
                         <h3><i class="bi bi-gear p-2"></i>Registro</h3>
                     </div>
                     <div class="card-body">
-                        <form id="registro" name="registro" action="index.php" method="POST" novalidate>
+                        <form id="registro" method="POST" action="index.php" novalidate>
+                            <!-- Usuario -->
                             <div class="input-group my-2">
                                 <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                <input type="text" class="form-control <?= isset($errorUsuarioFormato) ? ($errorUsuarioFormato ? "is-invalid" : "is-valid") : "" ?>"  placeholder="usuario" 
-                                       id="usuario" name="usuario" value="<?= $usuario ?? '' ?>" autofocus>
-                                <div class="invalid-feedback">
-                                    <?= RETRO_NOMBRE_FORMATO ?>
-                                </div>
+                                <input type="text" class="form-control 
+                                       <?= $enviado && isset($errorUsuarioFormato) ? ($errorUsuarioFormato ? 'is-invalid' : 'is-valid') : '' ?>"
+                                       id="usuario" name="usuario" placeholder="usuario"
+                                       value="<?= htmlspecialchars($usuario ?? '') ?>" minlength="3" required>
+                                       <?php if ($enviado && $errorUsuarioFormato): ?>
+                                    <div class="invalid-feedback">
+                                        <?= RETRO_NOMBRE_FORMATO ?>
+                                    </div>
+                                <?php endif ?>
                             </div>
+
+                            <!-- Contraseña -->
                             <div class="input-group my-2">
                                 <span class="input-group-text"><i class="bi bi-key"></i></span>
-                                <input type="password" class="form-control <?= isset($errorPasswordFormato) ? ($errorPasswordFormato ? "is-invalid" : "is-valid") : "" ?>" 
-                                       placeholder="contraseña" id="password1" name="password1" 
-                                       value="<?= $password1 ?? '' ?>">
-                                <div class="invalid-feedback">
-                                    <br><?= RETRO_PASS_FORMATO ?>
-                                </div>
+                                <input type="password" class="form-control 
+                                       <?= $enviado && isset($errorPasswordFormato) ? ($errorPasswordFormato ? 'is-invalid' : 'is-valid') : '' ?>"
+                                       id="password1" name="password1" placeholder="contraseña" minlength="8" required
+                                       value="<?= htmlspecialchars($password1 ?? '') ?>">
+                                       <?php if ($enviado && $errorPasswordFormato): ?>
+                                    <div class="invalid-feedback"><?= RETRO_PASS_FORMATO ?></div>
+                                <?php endif ?>
                             </div>
+
+                            <!-- Repetir contraseña -->
                             <div class="input-group my-2">
                                 <span class="input-group-text"><i class="bi bi-key"></i></span>
-                                <input type="password" class="form-control <?= isset($errorPasswordNoRepetido) ? ($errorPasswordNoRepetido ? "is-invalid" : "is-valid") : "" ?>"  
-                                       placeholder="Repita la contraseña" id="password2" name="password2" value="<?= $password2 ?? '' ?>">
-                                <div class="invalid-feedback">
-                                    <?= RETRO_PASS_REPETIDO ?>
-                                </div>
+                                <input type="password" class="form-control 
+                                       <?= $enviado && isset($errorPasswordNoRepetido) ? ($errorPasswordNoRepetido ? 'is-invalid' : 'is-valid') : '' ?>"
+                                       id="password2" name="password2" placeholder="Repite la contraseña" minlength="8" required
+                                       value="<?= htmlspecialchars($password2 ?? '') ?>">
+                                       <?php if ($enviado && $errorPasswordNoRepetido): ?>
+                                    <div class="invalid-feedback"><?= RETRO_PASS_REPETIDO ?></div>
+                                <?php endif ?>
                             </div>
+
+                            <!-- Email -->
                             <div class="input-group my-2">
                                 <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                <input type="email" class="form-control <?= isset($errorEmailFormato) ? ($errorEmailFormato ? "is-invalid" : "is-valid") : "" ?>"
-                                       placeholder="e-Mail" name="email" id="email" value="<?= $email ?? '' ?>">
-                                <div class="invalid-feedback">
-                                    <?= RETRO_EMAIL_FORMATO ?>
-                                </div>
+                                <input type="email" class="form-control 
+                                       <?= $enviado && isset($errorEmailFormato) ? ($errorEmailFormato ? 'is-invalid' : 'is-valid') : '' ?>"
+                                       id="email" name="email" placeholder="e-Mail" value="<?= htmlspecialchars($email ?? '') ?>" required>
+                                       <?php if ($enviado && $errorEmailFormato): ?>
+                                    <div class="invalid-feedback"><?= RETRO_EMAIL_FORMATO ?></div>
+                                <?php endif ?>
                             </div>
+
+                            <!-- Botón -->
                             <div class="text-end">
-                                <input type="submit" value="Registrar" class="btn btn-info" name="enviar">
+                                <input type="submit" name="enviar" value="Registrar" class="btn btn-info">
                             </div>
                         </form>
+
                     </div>
                 </div>
             </div>
