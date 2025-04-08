@@ -5,17 +5,27 @@ define("RETRO_PASS_REPETIDO", "Las contraseñas introducidas deben ser iguales."
 define("RETRO_PASS_FORMATO", "El password debe tener una minúscula, mayúscula, dígito y carácter especial.");
 
 $enviado = filter_has_var(INPUT_POST, 'enviar');
+
 if ($enviado) {
+    // 1. Leer datos sin validar
     $usuario = filter_input(INPUT_POST, 'usuario', FILTER_UNSAFE_RAW);
+    $email = filter_input(INPUT_POST, 'email', FILTER_UNSAFE_RAW);
     $password1 = filter_input(INPUT_POST, 'password1', FILTER_UNSAFE_RAW);
     $password2 = filter_input(INPUT_POST, 'password2', FILTER_UNSAFE_RAW);
-    $email = filter_input(INPUT_POST, 'email', FILTER_UNSAFE_RAW);
 
-    $errorUsuarioFormato = !preg_match("/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\-]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\- ]+){0,5}$/", $usuario ?? '') || mb_strlen(trim($usuario ?? '')) < 3;
-    $errorPasswordFormato = !preg_match("/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}/", $password1 ?? '');
-    $errorPasswordNoRepetido = $password1 !== $password2 || $errorPasswordFormato;
-    $errorEmailFormato = !preg_match("/^[a-z0-9]+([_\\.-][a-z0-9]+)*@([a-z0-9]+([\.-][a-z0-9]+)*)+\\.[a-z]{2,}$/i", $email ?? '');
+    // 2. Validar con filter_var()
+    $errorUsuarioFormato = !filter_var($usuario, FILTER_VALIDATE_REGEXP, [
+                'options' => ['regexp' => "/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\-]+(\s+[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ'´`\- ]+){0,5}$/"]
+            ]) || mb_strlen(trim($usuario)) < 3;
 
+    $errorEmailFormato = !filter_var($email, FILTER_VALIDATE_EMAIL);
+
+    $errorPasswordFormato = !preg_match(
+                    "/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}/",
+                    $password1 ?? ''
+    );
+
+    $errorPasswordNoRepetido = $password1 !== $password2;
     $errorPassword = $errorPasswordFormato || $errorPasswordNoRepetido;
     $error = $errorUsuarioFormato || $errorEmailFormato || $errorPassword;
 }
